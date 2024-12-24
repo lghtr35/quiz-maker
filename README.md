@@ -4,6 +4,19 @@ Quiz maker is a simple Cobra-based quiz API that is in-memory. It can save quizz
 
 To use build and run `quiz-maker --help`
 
+## Build and Run
+
+Needs Go 1.23 to build and run the application.
+
+### Build
+
+Run in source directory where main file resides.
+`go build`
+
+### Run
+
+App should respond to `quiz-maker`. If not try `./quiz-maker` in executable directory.
+
 ## App flow
 
 Flow to take a quiz and see score and rankings:
