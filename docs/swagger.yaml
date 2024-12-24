@@ -1,0 +1,679 @@
+definitions:
+  models.Answer:
+    properties:
+      createdAt:
+        type: string
+      id:
+        type: integer
+      optionId:
+        type: integer
+      quizId:
+        type: integer
+      updatedAt:
+        type: string
+      userId:
+        type: integer
+    type: object
+  models.AnswerQuizQuestionRequest:
+    properties:
+      optionId:
+        type: integer
+      progressionId:
+        type: integer
+    required:
+    - optionId
+    - progressionId
+    type: object
+  models.AnswerQuizQuestionResponse:
+    properties:
+      progression:
+        $ref: '#/definitions/models.Progression'
+    type: object
+  models.BeginQuizRequest:
+    properties:
+      quizId:
+        type: integer
+      userId:
+        type: integer
+    required:
+    - quizId
+    - userId
+    type: object
+  models.BeginQuizResponse:
+    properties:
+      progression:
+        $ref: '#/definitions/models.Progression'
+    type: object
+  models.CreateAnswerRequest:
+    properties:
+      isCorrect:
+        type: boolean
+      value:
+        type: string
+    type: object
+  models.CreateQuestionRequest:
+    properties:
+      answers:
+        items:
+          $ref: '#/definitions/models.CreateAnswerRequest'
+        type: array
+      question:
+        type: string
+    required:
+    - answers
+    - question
+    type: object
+  models.CreateQuizRequest:
+    properties:
+      name:
+        type: string
+      questions:
+        items:
+          $ref: '#/definitions/models.CreateQuestionRequest'
+        type: array
+    required:
+    - name
+    type: object
+  models.CreateUserRequest:
+    properties:
+      name:
+        type: string
+    required:
+    - name
+    type: object
+  models.FinalizeQuizRequest:
+    properties:
+      progressionId:
+        type: integer
+    required:
+    - progressionId
+    type: object
+  models.FinalizeQuizResponse:
+    properties:
+      score:
+        $ref: '#/definitions/models.Score'
+    type: object
+  models.GetUserRankingByScoreResponse:
+    properties:
+      message:
+        type: string
+      percent:
+        type: number
+      rank:
+        type: integer
+      userScore:
+        $ref: '#/definitions/models.Score'
+    type: object
+  models.Option:
+    properties:
+      answers:
+        items:
+          $ref: '#/definitions/models.Answer'
+        type: array
+      createdAt:
+        type: string
+      id:
+        type: integer
+      isCorrect:
+        type: boolean
+      questionId:
+        type: integer
+      updatedAt:
+        type: string
+      value:
+        type: string
+    type: object
+  models.OptionBase:
+    properties:
+      answers:
+        items:
+          $ref: '#/definitions/models.Answer'
+        type: array
+      createdAt:
+        type: string
+      id:
+        type: integer
+      questionId:
+        type: integer
+      updatedAt:
+        type: string
+      value:
+        type: string
+    type: object
+  models.Progression:
+    properties:
+      createdAt:
+        type: string
+      currentQuestionId:
+        type: integer
+      id:
+        type: integer
+      isFinished:
+        type: boolean
+      questionNumber:
+        type: integer
+      quizId:
+        type: integer
+      updatedAt:
+        type: string
+      userId:
+        type: integer
+    type: object
+  models.Question:
+    properties:
+      createdAt:
+        type: string
+      id:
+        type: integer
+      options:
+        items:
+          $ref: '#/definitions/models.Option'
+        type: array
+      progressions:
+        items:
+          $ref: '#/definitions/models.Progression'
+        type: array
+      question:
+        type: string
+      quizId:
+        type: integer
+      updatedAt:
+        type: string
+    type: object
+  models.QuestionWithOptionsResponse:
+    properties:
+      createdAt:
+        type: string
+      id:
+        type: integer
+      options:
+        items:
+          $ref: '#/definitions/models.OptionBase'
+        type: array
+      question:
+        type: string
+      quizId:
+        type: integer
+      updatedAt:
+        type: string
+    type: object
+  models.Quiz:
+    properties:
+      answers:
+        items:
+          $ref: '#/definitions/models.Answer'
+        type: array
+      createdAt:
+        type: string
+      id:
+        type: integer
+      name:
+        type: string
+      questions:
+        items:
+          $ref: '#/definitions/models.Question'
+        type: array
+      updatedAt:
+        type: string
+    type: object
+  models.Score:
+    properties:
+      createdAt:
+        type: string
+      id:
+        type: integer
+      quizId:
+        type: integer
+      score:
+        type: number
+      updatedAt:
+        type: string
+      userId:
+        type: integer
+    type: object
+  models.UpdateQuizRequest:
+    properties:
+      id:
+        type: integer
+      name:
+        type: string
+    required:
+    - id
+    type: object
+  models.UpdateUserRequest:
+    properties:
+      id:
+        type: integer
+      name:
+        type: string
+    required:
+    - id
+    type: object
+  models.User:
+    properties:
+      answer:
+        items:
+          $ref: '#/definitions/models.Answer'
+        type: array
+      createdAt:
+        type: string
+      id:
+        type: integer
+      name:
+        type: string
+      updatedAt:
+        type: string
+    type: object
+host: localhost:8080
+info:
+  contact: {}
+  description: Quiz Maker API for Fast Track Interview
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  termsOfService: http://swagger.io/terms/
+  title: Quiz Maker API
+  version: 0.0.1
+paths:
+  /quizzes:
+    patch:
+      consumes:
+      - application/json
+      description: Updates the details of an existing quiz.
+      parameters:
+      - description: Updated quiz details
+        in: body
+        name: quiz
+        required: true
+        schema:
+          $ref: '#/definitions/models.UpdateQuizRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Quiz'
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Update an existing quiz
+      tags:
+      - Quizzes
+    post:
+      consumes:
+      - application/json
+      description: Creates a new quiz along with its questions and answers.
+      parameters:
+      - description: Quiz details
+        in: body
+        name: quiz
+        required: true
+        schema:
+          $ref: '#/definitions/models.CreateQuizRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/models.Quiz'
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Create a new quiz
+      tags:
+      - Quizzes
+  /quizzes/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Deletes a quiz by its ID, including its associated questions and
+        answers.
+      parameters:
+      - description: Quiz ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Delete a quiz
+      tags:
+      - Quizzes
+    get:
+      consumes:
+      - application/json
+      description: Retrieves a quiz by its ID, including its questions and answers.
+      parameters:
+      - description: Quiz ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Quiz'
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Get a quiz by ID
+      tags:
+      - Quizzes
+  /quizzes/answer:
+    post:
+      consumes:
+      - application/json
+      description: Submits an answer for the current question and updates the progression.
+      parameters:
+      - description: Answer details
+        in: body
+        name: answerQuizQuestion
+        required: true
+        schema:
+          $ref: '#/definitions/models.AnswerQuizQuestionRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.AnswerQuizQuestionResponse'
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Answer a quiz question
+      tags:
+      - Quizzes
+  /quizzes/begin:
+    post:
+      consumes:
+      - application/json
+      description: Starts a quiz session for a user, initializing the progression
+        with the first question.
+      parameters:
+      - description: Quiz start details
+        in: body
+        name: beginQuiz
+        required: true
+        schema:
+          $ref: '#/definitions/models.BeginQuizRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/models.BeginQuizResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Begin a quiz
+      tags:
+      - Quizzes
+  /quizzes/questions/{id}:
+    get:
+      consumes:
+      - application/json
+      description: Retrieves a question by its ID along with its answer options.
+      parameters:
+      - description: Question ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.QuestionWithOptionsResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Get a quiz question by ID
+      tags:
+      - Quizzes
+  /quizzes/submit:
+    post:
+      consumes:
+      - application/json
+      description: Marks a quiz as finished and calculates the score based on correct
+        answers.
+      parameters:
+      - description: Quiz finalization details
+        in: body
+        name: finalizeQuiz
+        required: true
+        schema:
+          $ref: '#/definitions/models.FinalizeQuizRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.FinalizeQuizResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Finalize a quiz
+      tags:
+      - Quizzes
+  /users:
+    get:
+      consumes:
+      - application/json
+      description: Retrieves a paginated list of users based on optional filters.
+      parameters:
+      - collectionFormat: csv
+        description: List of user IDs
+        in: query
+        items:
+          type: integer
+        name: id_list
+        type: array
+      - description: Name to search for
+        in: query
+        name: name
+        type: string
+      - description: Page number
+        in: query
+        name: page
+        required: true
+        type: integer
+      - description: Page size
+        in: query
+        name: size
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.User'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Get a list of users
+      tags:
+      - Users
+    patch:
+      consumes:
+      - application/json
+      description: Updates user details based on the provided request body.
+      parameters:
+      - description: Updated user details
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/models.UpdateUserRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.User'
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Update an existing user
+      tags:
+      - Users
+    post:
+      consumes:
+      - application/json
+      description: Creates a new user in the system.
+      parameters:
+      - description: User details
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/models.CreateUserRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/models.User'
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Create a new user
+      tags:
+      - Users
+  /users/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Deletes a user by their ID.
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Delete a user
+      tags:
+      - Users
+    get:
+      consumes:
+      - application/json
+      description: Retrieves a user by their ID.
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.User'
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Get a user by ID
+      tags:
+      - Users
+  /users/{userId}/quiz/{quizId}:
+    get:
+      description: Retrieves the user's score for a specific quiz.
+      parameters:
+      - description: User ID
+        in: path
+        name: userId
+        required: true
+        type: string
+      - description: Quiz ID
+        in: path
+        name: quizId
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Score'
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      summary: Get user's score for a specific quiz
+      tags:
+      - Users
+  /users/{userId}/quiz/{quizId}/ranking:
+    get:
+      description: Retrieves the user's ranking, score, and percentage of quizzers
+        they outperformed in a specific quiz.
+      parameters:
+      - description: User ID
+        in: path
+        name: userId
+        required: true
+        type: string
+      - description: Quiz ID
+        in: path
+        name: quizId
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.GetUserRankingByScoreResponse'
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      summary: Get user's ranking by score in a specific quiz
+      tags:
+      - Users
+swagger: "2.0"
