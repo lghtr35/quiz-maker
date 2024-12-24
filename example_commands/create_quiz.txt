@@ -1,0 +1,3 @@
+./quiz-maker create quiz test "is Test?,is not a Test?" "[[{\"isCorrect\":true,\"value\":\"Yes\"},{\"isCorrect\":false,\"value\":\"No\"}],[{\"isCorrect\":false,\"value\":\"Yes\"},{\"isCorrect\":true,\"value\":\"Yes\"}]]"
+
+./quiz-maker create quiz test "is Test?,is not a Test?"

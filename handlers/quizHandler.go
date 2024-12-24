@@ -22,10 +22,11 @@ func newQuizHandler(db *gorm.DB) *QuizHandler {
 
 func (h *QuizHandler) ConfigureSelf(m *http.ServeMux) *http.ServeMux {
 	m.HandleFunc("GET /quizzes/questions/{id}", h.getQuestion)
+	m.HandleFunc("POST /quizzes/questions/{id}/options", h.createQuestionOption)
+
 	m.HandleFunc("GET /quizzes/{id}", h.readQuizWithID)
 	m.HandleFunc("POST /quizzes", h.createQuiz)
 	m.HandleFunc("PATCH /quizzes", h.updateQuiz)
-
 	m.HandleFunc("DELETE /quizzes/{id}", h.deleteQuiz)
 
 	m.HandleFunc("POST /quizzes/begin", h.beginQuiz)
@@ -43,7 +44,8 @@ func (h *QuizHandler) ConfigureSelf(m *http.ServeMux) *http.ServeMux {
 // @Produce json
 // @Param quiz body models.CreateQuizRequest true "Quiz details"
 // @Success 201 {object} models.Quiz
-// @Failure 500 {string} string "Internal Server Error"
+// @Failure      404     {string}  string                    "Question not found"
+// @Failure      500     {string}  string                    "Internal server error"
 // @Router /quizzes [post]
 func (h *QuizHandler) createQuiz(w http.ResponseWriter, r *http.Request) {
 	log.Printf("%s %s => CreateQuiz invoked", r.Method, r.URL.Path)
@@ -65,6 +67,10 @@ func (h *QuizHandler) createQuiz(w http.ResponseWriter, r *http.Request) {
 	}
 	res := h.db.Create(&quiz)
 	if res.Error != nil {
+		if res.Error == gorm.ErrRecordNotFound {
+			http.Error(w, res.Error.Error(), http.StatusNotFound)
+			return
+		}
 		http.Error(w, res.Error.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -79,18 +85,20 @@ func (h *QuizHandler) createQuiz(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, res.Error.Error(), http.StatusInternalServerError)
 			return
 		}
-		for _, a := range q.Answers {
-			answer := models.Option{
-				OptionBase: models.OptionBase{
-					Value:      a.Value,
-					QuestionID: question.ID,
-				},
-				IsCorrect: a.IsCorrect,
-			}
-			res := h.db.Create(&answer)
-			if res.Error != nil {
-				http.Error(w, res.Error.Error(), http.StatusInternalServerError)
-				return
+		if q.Options != nil {
+			for _, a := range *q.Options {
+				answer := models.Option{
+					OptionBase: models.OptionBase{
+						Value:      a.Value,
+						QuestionID: question.ID,
+					},
+					IsCorrect: a.IsCorrect,
+				}
+				res := h.db.Create(&answer)
+				if res.Error != nil {
+					http.Error(w, res.Error.Error(), http.StatusInternalServerError)
+					return
+				}
 			}
 		}
 	}
@@ -113,7 +121,8 @@ func (h *QuizHandler) createQuiz(w http.ResponseWriter, r *http.Request) {
 // @Produce json
 // @Param quiz body models.UpdateQuizRequest true "Updated quiz details"
 // @Success 200 {object} models.Quiz
-// @Failure 500 {string} string "Internal Server Error"
+// @Failure      404     {string}  string                    "Question not found"
+// @Failure      500     {string}  string                    "Internal server error"
 // @Router /quizzes [patch]
 func (h *QuizHandler) updateQuiz(w http.ResponseWriter, r *http.Request) {
 	log.Printf("%s %s => UpdateQuiz invoked", r.Method, r.URL.Path)
@@ -133,6 +142,10 @@ func (h *QuizHandler) updateQuiz(w http.ResponseWriter, r *http.Request) {
 	quiz := new(models.Quiz)
 	res := h.db.First(quiz, request.ID)
 	if res.Error != nil {
+		if res.Error == gorm.ErrRecordNotFound {
+			http.Error(w, res.Error.Error(), http.StatusNotFound)
+			return
+		}
 		http.Error(w, res.Error.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -143,6 +156,10 @@ func (h *QuizHandler) updateQuiz(w http.ResponseWriter, r *http.Request) {
 
 	res = h.db.Save(quiz)
 	if res.Error != nil {
+		if res.Error == gorm.ErrRecordNotFound {
+			http.Error(w, res.Error.Error(), http.StatusNotFound)
+			return
+		}
 		http.Error(w, res.Error.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -165,7 +182,8 @@ func (h *QuizHandler) updateQuiz(w http.ResponseWriter, r *http.Request) {
 // @Produce json
 // @Param id path string true "Quiz ID"
 // @Success 200 {object} models.Quiz
-// @Failure 500 {string} string "Internal Server Error"
+// @Failure      404     {string}  string                    "Question not found"
+// @Failure      500     {string}  string                    "Internal server error"
 // @Router /quizzes/{id} [get]
 func (h *QuizHandler) readQuizWithID(w http.ResponseWriter, r *http.Request) {
 	log.Printf("%s %s => ReadQuizWithID invoked", r.Method, r.URL.Path)
@@ -174,6 +192,10 @@ func (h *QuizHandler) readQuizWithID(w http.ResponseWriter, r *http.Request) {
 	var quiz models.Quiz
 	res := h.db.Preload(clause.Associations).First(&quiz, id)
 	if res.Error != nil {
+		if res.Error == gorm.ErrRecordNotFound {
+			http.Error(w, res.Error.Error(), http.StatusNotFound)
+			return
+		}
 		http.Error(w, res.Error.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -196,7 +218,8 @@ func (h *QuizHandler) readQuizWithID(w http.ResponseWriter, r *http.Request) {
 // @Produce json
 // @Param id path string true "Quiz ID"
 // @Success 204 "No Content"
-// @Failure 500 {string} string "Internal Server Error"
+// @Failure      404     {string}  string                    "Question not found"
+// @Failure      500     {string}  string                    "Internal server error"
 // @Router /quizzes/{id} [delete]
 func (h *QuizHandler) deleteQuiz(w http.ResponseWriter, r *http.Request) {
 	log.Printf("%s %s => DeleteQuiz invoked", r.Method, r.URL.Path)
@@ -204,6 +227,10 @@ func (h *QuizHandler) deleteQuiz(w http.ResponseWriter, r *http.Request) {
 
 	res := h.db.Select(clause.Associations).Delete(&models.Quiz{}, id)
 	if res.Error != nil {
+		if res.Error == gorm.ErrRecordNotFound {
+			http.Error(w, res.Error.Error(), http.StatusNotFound)
+			return
+		}
 		http.Error(w, res.Error.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -219,7 +246,8 @@ func (h *QuizHandler) deleteQuiz(w http.ResponseWriter, r *http.Request) {
 // @Produce json
 // @Param beginQuiz body models.BeginQuizRequest true "Quiz start details"
 // @Success 201 {object} models.BeginQuizResponse
-// @Failure 500 {string} string "Internal Server Error"
+// @Failure      404     {string}  string                    "Question not found"
+// @Failure      500     {string}  string                    "Internal server error"
 // @Router /quizzes/begin [post]
 func (h *QuizHandler) beginQuiz(w http.ResponseWriter, r *http.Request) {
 	log.Printf("%s %s => BeginQuiz invoked", r.Method, r.URL.Path)
@@ -233,6 +261,10 @@ func (h *QuizHandler) beginQuiz(w http.ResponseWriter, r *http.Request) {
 	var quiz models.Quiz
 	res := h.db.Preload(clause.Associations).First(&quiz, request.QuizID)
 	if res.Error != nil {
+		if res.Error == gorm.ErrRecordNotFound {
+			http.Error(w, res.Error.Error(), http.StatusNotFound)
+			return
+		}
 		http.Error(w, res.Error.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -251,6 +283,10 @@ func (h *QuizHandler) beginQuiz(w http.ResponseWriter, r *http.Request) {
 	}
 	res = h.db.Create(&progression)
 	if res.Error != nil {
+		if res.Error == gorm.ErrRecordNotFound {
+			http.Error(w, res.Error.Error(), http.StatusNotFound)
+			return
+		}
 		http.Error(w, res.Error.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -277,7 +313,8 @@ func (h *QuizHandler) beginQuiz(w http.ResponseWriter, r *http.Request) {
 // @Param answerQuizQuestion body models.AnswerQuizQuestionRequest true "Answer details"
 // @Success 200 {object} models.AnswerQuizQuestionResponse
 // @Failure 400 {string} string "Bad Request"
-// @Failure 500 {string} string "Internal Server Error"
+// @Failure      404     {string}  string                    "Question not found"
+// @Failure      500     {string}  string                    "Internal server error"
 // @Router /quizzes/answer [post]
 func (h *QuizHandler) answerQuizQuestion(w http.ResponseWriter, r *http.Request) {
 	log.Printf("%s %s => AnswerQuizQuestion invoked", r.Method, r.URL.Path)
@@ -292,6 +329,10 @@ func (h *QuizHandler) answerQuizQuestion(w http.ResponseWriter, r *http.Request)
 	var progression models.Progression
 	res := h.db.First(&progression, request.ProgressionID)
 	if res.Error != nil {
+		if res.Error == gorm.ErrRecordNotFound {
+			http.Error(w, res.Error.Error(), http.StatusNotFound)
+			return
+		}
 		http.Error(w, res.Error.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -307,6 +348,10 @@ func (h *QuizHandler) answerQuizQuestion(w http.ResponseWriter, r *http.Request)
 	var question models.Question
 	res = h.db.Preload("Options").First(&question, progression.CurrentQuestionID)
 	if res.Error != nil {
+		if res.Error == gorm.ErrRecordNotFound {
+			http.Error(w, res.Error.Error(), http.StatusNotFound)
+			return
+		}
 		http.Error(w, res.Error.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -336,6 +381,10 @@ func (h *QuizHandler) answerQuizQuestion(w http.ResponseWriter, r *http.Request)
 	}
 	res = h.db.Create(&answer)
 	if res.Error != nil {
+		if res.Error == gorm.ErrRecordNotFound {
+			http.Error(w, res.Error.Error(), http.StatusNotFound)
+			return
+		}
 		http.Error(w, res.Error.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -344,6 +393,10 @@ func (h *QuizHandler) answerQuizQuestion(w http.ResponseWriter, r *http.Request)
 	var quiz models.Quiz
 	res = h.db.Preload(clause.Associations).First(&quiz, progression.QuizID)
 	if res.Error != nil {
+		if res.Error == gorm.ErrRecordNotFound {
+			http.Error(w, res.Error.Error(), http.StatusNotFound)
+			return
+		}
 		http.Error(w, res.Error.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -358,6 +411,10 @@ func (h *QuizHandler) answerQuizQuestion(w http.ResponseWriter, r *http.Request)
 	// save progression
 	res = h.db.Save(&progression)
 	if res.Error != nil {
+		if res.Error == gorm.ErrRecordNotFound {
+			http.Error(w, res.Error.Error(), http.StatusNotFound)
+			return
+		}
 		http.Error(w, res.Error.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -383,7 +440,8 @@ func (h *QuizHandler) answerQuizQuestion(w http.ResponseWriter, r *http.Request)
 // @Produce json
 // @Param finalizeQuiz body models.FinalizeQuizRequest true "Quiz finalization details"
 // @Success 200 {object} models.FinalizeQuizResponse
-// @Failure 500 {string} string "Internal Server Error"
+// @Failure      404     {string}  string                    "Question not found"
+// @Failure      500     {string}  string                    "Internal server error"
 // @Router /quizzes/submit [post]
 func (h *QuizHandler) calculateScore(w http.ResponseWriter, r *http.Request) {
 	log.Printf("%s %s => CalculateScore invoked", r.Method, r.URL.Path)
@@ -396,6 +454,10 @@ func (h *QuizHandler) calculateScore(w http.ResponseWriter, r *http.Request) {
 	var progression models.Progression
 	res := h.db.Preload(clause.Associations).First(&progression, request.ProgressionID)
 	if res.Error != nil {
+		if res.Error == gorm.ErrRecordNotFound {
+			http.Error(w, res.Error.Error(), http.StatusNotFound)
+			return
+		}
 		http.Error(w, res.Error.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -404,6 +466,10 @@ func (h *QuizHandler) calculateScore(w http.ResponseWriter, r *http.Request) {
 	var quiz models.Quiz
 	res = h.db.Preload(clause.Associations).First(&quiz, progression.QuizID)
 	if res.Error != nil {
+		if res.Error == gorm.ErrRecordNotFound {
+			http.Error(w, res.Error.Error(), http.StatusNotFound)
+			return
+		}
 		http.Error(w, res.Error.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -417,10 +483,14 @@ func (h *QuizHandler) calculateScore(w http.ResponseWriter, r *http.Request) {
 	var answers []models.Answer
 	res = h.db.Where("user_id = ? AND quiz_id = ?", progression.UserID, progression.QuizID).Find(&answers)
 	if res.Error != nil {
+		if res.Error == gorm.ErrRecordNotFound {
+			http.Error(w, res.Error.Error(), http.StatusNotFound)
+			return
+		}
 		http.Error(w, res.Error.Error(), http.StatusInternalServerError)
 		return
 	}
-	optionIds := make([]uint, len(answers))
+	optionIds := make([]uint32, len(answers))
 	for i, a := range answers {
 		optionIds[i] = a.OptionID
 	}
@@ -428,6 +498,10 @@ func (h *QuizHandler) calculateScore(w http.ResponseWriter, r *http.Request) {
 	var options []models.Option
 	res = h.db.Where("id IN ?", optionIds).Find(&options)
 	if res.Error != nil {
+		if res.Error == gorm.ErrRecordNotFound {
+			http.Error(w, res.Error.Error(), http.StatusNotFound)
+			return
+		}
 		http.Error(w, res.Error.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -446,6 +520,10 @@ func (h *QuizHandler) calculateScore(w http.ResponseWriter, r *http.Request) {
 	}
 	res = h.db.Create(&score)
 	if res.Error != nil {
+		if res.Error == gorm.ErrRecordNotFound {
+			http.Error(w, res.Error.Error(), http.StatusNotFound)
+			return
+		}
 		http.Error(w, res.Error.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -453,6 +531,10 @@ func (h *QuizHandler) calculateScore(w http.ResponseWriter, r *http.Request) {
 	// Quiz has been submitted so progression is not needed anymore
 	res = h.db.Delete(&models.Progression{}, progression.ID)
 	if res.Error != nil {
+		if res.Error == gorm.ErrRecordNotFound {
+			http.Error(w, res.Error.Error(), http.StatusNotFound)
+			return
+		}
 		http.Error(w, res.Error.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -478,7 +560,8 @@ func (h *QuizHandler) calculateScore(w http.ResponseWriter, r *http.Request) {
 // @Produce json
 // @Param id path string true "Question ID"
 // @Success 200 {object} models.QuestionWithOptionsResponse
-// @Failure 500 {string} string "Internal Server Error"
+// @Failure      404     {string}  string                    "Question not found"
+// @Failure      500     {string}  string                    "Internal server error"
 // @Router /quizzes/questions/{id} [get]
 func (h *QuizHandler) getQuestion(w http.ResponseWriter, r *http.Request) {
 	log.Printf("%s %s => GetQuestion invoked", r.Method, r.URL.Path)
@@ -487,6 +570,10 @@ func (h *QuizHandler) getQuestion(w http.ResponseWriter, r *http.Request) {
 	var question models.Question
 	res := h.db.Preload("Options").First(&question, questionId)
 	if res.Error != nil {
+		if res.Error == gorm.ErrRecordNotFound {
+			http.Error(w, res.Error.Error(), http.StatusNotFound)
+			return
+		}
 		http.Error(w, res.Error.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -513,5 +600,63 @@ func (h *QuizHandler) getQuestion(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(200)
+	w.Write(b)
+}
+
+// @Summary      Create a question option
+// @Description  Creates a new option for a specific question by its ID.
+// @Tags         Quiz
+// @Accept       json
+// @Produce      json
+// @Param        id      path      string                    true  "Question ID"
+// @Param        request body      models.CreateOptionRequest true  "Option creation payload"
+// @Success      201     {object}  models.OptionBase         "Created option"
+// @Failure      400     {string}  string                    "Bad request"
+// @Failure      404     {string}  string                    "Question not found"
+// @Failure      500     {string}  string                    "Internal server error"
+// @Router /quizzes/questions/{id}/options [post]
+func (h *QuizHandler) createQuestionOption(w http.ResponseWriter, r *http.Request) {
+	log.Printf("%s %s => CreateQuestionOption invoked", r.Method, r.URL.Path)
+	questionId := r.PathValue("id")
+	request, err := util.ReadBodyAndUnmarshal(models.CreateOptionRequest{}, r.Body)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	var question models.Question
+	res := h.db.First(&question, questionId)
+	if res.Error != nil {
+		if res.Error == gorm.ErrRecordNotFound {
+			http.Error(w, res.Error.Error(), http.StatusNotFound)
+			return
+		}
+		http.Error(w, res.Error.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	option := models.Option{
+		OptionBase: models.OptionBase{
+			QuestionID: question.ID,
+			Value:      request.Value,
+		},
+		IsCorrect: request.IsCorrect,
+	}
+	res = h.db.Create(&option)
+	if res.Error != nil {
+		if res.Error == gorm.ErrRecordNotFound {
+			http.Error(w, res.Error.Error(), http.StatusNotFound)
+			return
+		}
+		http.Error(w, res.Error.Error(), http.StatusInternalServerError)
+		return
+	}
+	b, err := json.Marshal(option.OptionBase)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(201)
 	w.Write(b)
 }

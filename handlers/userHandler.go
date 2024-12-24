@@ -41,12 +41,13 @@ func (h *UserHandler) ConfigureSelf(m *http.ServeMux) *http.ServeMux {
 // @Tags Users
 // @Accept json
 // @Produce json
-// @Param id_list query []uint false "List of user IDs"
+// @Param id_list query []uint32 false "List of user IDs"
 // @Param name query string false "Name to search for"
 // @Param page query int true "Page number"
 // @Param size query int true "Page size"
 // @Success 200 {array} models.User
-// @Failure 500 {string} string "Internal Server Error"
+// @Failure      404     {string}  string                    "Question not found"
+// @Failure      500     {string}  string                    "Internal server error"
 // @Router /users [get]
 func (h *UserHandler) readUsers(w http.ResponseWriter, r *http.Request) {
 	log.Printf("%s %s => ReadUsers invoked", r.Method, r.URL.Path)
@@ -71,6 +72,10 @@ func (h *UserHandler) readUsers(w http.ResponseWriter, r *http.Request) {
 	q = q.Offset(int(offset)).Limit(int(request.Size))
 	res := q.Preload(clause.Associations).Find(&users)
 	if res.Error != nil {
+		if res.Error == gorm.ErrRecordNotFound {
+			http.Error(w, res.Error.Error(), http.StatusNotFound)
+			return
+		}
 		http.Error(w, res.Error.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -92,7 +97,8 @@ func (h *UserHandler) readUsers(w http.ResponseWriter, r *http.Request) {
 // @Produce json
 // @Param user body models.CreateUserRequest true "User details"
 // @Success 201 {object} models.User
-// @Failure 500 {string} string "Internal Server Error"
+// @Failure      404     {string}  string                    "Question not found"
+// @Failure      500     {string}  string                    "Internal server error"
 // @Router /users [post]
 func (h *UserHandler) createUsers(w http.ResponseWriter, r *http.Request) {
 	log.Printf("%s %s => CreateUsers invoked", r.Method, r.URL.Path)
@@ -114,6 +120,10 @@ func (h *UserHandler) createUsers(w http.ResponseWriter, r *http.Request) {
 	}
 	res := h.db.Create(user)
 	if res.Error != nil {
+		if res.Error == gorm.ErrRecordNotFound {
+			http.Error(w, res.Error.Error(), http.StatusNotFound)
+			return
+		}
 		http.Error(w, res.Error.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -136,7 +146,8 @@ func (h *UserHandler) createUsers(w http.ResponseWriter, r *http.Request) {
 // @Produce json
 // @Param user body models.UpdateUserRequest true "Updated user details"
 // @Success 200 {object} models.User
-// @Failure 500 {string} string "Internal Server Error"
+// @Failure      404     {string}  string                    "Question not found"
+// @Failure      500     {string}  string                    "Internal server error"
 // @Router /users [patch]
 func (h *UserHandler) updateUsers(w http.ResponseWriter, r *http.Request) {
 	log.Printf("%s %s => UpdateUsers invoked", r.Method, r.URL.Path)
@@ -156,6 +167,10 @@ func (h *UserHandler) updateUsers(w http.ResponseWriter, r *http.Request) {
 	user := new(models.User)
 	res := h.db.First(user, request.ID)
 	if res.Error != nil {
+		if res.Error == gorm.ErrRecordNotFound {
+			http.Error(w, res.Error.Error(), http.StatusNotFound)
+			return
+		}
 		http.Error(w, res.Error.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -166,6 +181,10 @@ func (h *UserHandler) updateUsers(w http.ResponseWriter, r *http.Request) {
 
 	res = h.db.Save(user)
 	if res.Error != nil {
+		if res.Error == gorm.ErrRecordNotFound {
+			http.Error(w, res.Error.Error(), http.StatusNotFound)
+			return
+		}
 		http.Error(w, res.Error.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -188,7 +207,8 @@ func (h *UserHandler) updateUsers(w http.ResponseWriter, r *http.Request) {
 // @Produce json
 // @Param id path string true "User ID"
 // @Success 200 {object} models.User
-// @Failure 500 {string} string "Internal Server Error"
+// @Failure      404     {string}  string                    "Question not found"
+// @Failure      500     {string}  string                    "Internal server error"
 // @Router /users/{id} [get]
 func (h *UserHandler) readUserWithID(w http.ResponseWriter, r *http.Request) {
 	log.Printf("%s %s => ReadUserWithID invoked", r.Method, r.URL.Path)
@@ -197,6 +217,10 @@ func (h *UserHandler) readUserWithID(w http.ResponseWriter, r *http.Request) {
 	var user models.User
 	res := h.db.Preload(clause.Associations).First(&user, id)
 	if res.Error != nil {
+		if res.Error == gorm.ErrRecordNotFound {
+			http.Error(w, res.Error.Error(), http.StatusNotFound)
+			return
+		}
 		http.Error(w, res.Error.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -219,7 +243,8 @@ func (h *UserHandler) readUserWithID(w http.ResponseWriter, r *http.Request) {
 // @Produce json
 // @Param id path string true "User ID"
 // @Success 204 "No Content"
-// @Failure 500 {string} string "Internal Server Error"
+// @Failure      404     {string}  string                    "Question not found"
+// @Failure      500     {string}  string                    "Internal server error"
 // @Router /users/{id} [delete]
 func (h *UserHandler) deleteUser(w http.ResponseWriter, r *http.Request) {
 	log.Printf("%s %s => DeleteUser invoked", r.Method, r.URL.Path)
@@ -227,6 +252,10 @@ func (h *UserHandler) deleteUser(w http.ResponseWriter, r *http.Request) {
 
 	res := h.db.Delete(&models.User{}, id)
 	if res.Error != nil {
+		if res.Error == gorm.ErrRecordNotFound {
+			http.Error(w, res.Error.Error(), http.StatusNotFound)
+			return
+		}
 		http.Error(w, res.Error.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -251,6 +280,10 @@ func (h *UserHandler) getUserScoreForQuiz(w http.ResponseWriter, r *http.Request
 	var score models.Score
 	res := h.db.Where("user_id = ? AND quiz_id = ?", userId, quizId).First(&score)
 	if res.Error != nil {
+		if res.Error == gorm.ErrRecordNotFound {
+			http.Error(w, res.Error.Error(), http.StatusNotFound)
+			return
+		}
 		http.Error(w, res.Error.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -284,23 +317,27 @@ func (h *UserHandler) getUserRankingByScore(w http.ResponseWriter, r *http.Reque
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	userId := uint(temp)
+	userId := uint32(temp)
 
 	var scores []models.Score
 	//Query
 	res := h.db.Where("quiz_id = ?", quizId).Order("score desc").Find(&scores)
 	if res.Error != nil {
+		if res.Error == gorm.ErrRecordNotFound {
+			http.Error(w, res.Error.Error(), http.StatusNotFound)
+			return
+		}
 		http.Error(w, res.Error.Error(), http.StatusInternalServerError)
 		return
 	}
 
 	totalOpponentCount := len(scores)
 	userPlace := 0
-	userScore := new(models.Score)
+	var userScore models.Score
 	for i, s := range scores {
 		if s.UserID == userId {
 			userPlace = i + 1
-			userScore = &scores[i]
+			userScore = scores[i]
 			break
 		}
 	}
@@ -309,7 +346,7 @@ func (h *UserHandler) getUserRankingByScore(w http.ResponseWriter, r *http.Reque
 		Percent: percent,
 		Message: fmt.Sprintf("You were better than %.2f%% of all quizzers", percent),
 		Score:   userScore,
-		Rank:    uint(userPlace),
+		Rank:    uint32(userPlace),
 	}
 
 	if percent == 0 && userPlace == 1 {
@@ -319,7 +356,7 @@ func (h *UserHandler) getUserRankingByScore(w http.ResponseWriter, r *http.Reque
 	if userPlace == 0 {
 		response.Message = "Score of this quiz has not been found."
 		response.Percent = 0
-		response.Score = nil
+		response.Score = models.Score{}
 		response.Rank = 0
 	}
 

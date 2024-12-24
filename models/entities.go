@@ -3,37 +3,37 @@ package models
 import "time"
 
 type Base struct {
-	ID        uint      `gorm:"primarykey" json:"id"`
+	ID        uint32    `gorm:"primarykey" json:"id"`
 	CreatedAt time.Time `json:"createdAt"`
 	UpdatedAt time.Time `json:"updatedAt"`
 }
 
 type Score struct {
 	Base
-	QuizID uint    `json:"quizId"`
-	UserID uint    `json:"userId"`
+	QuizID uint32  `json:"quizId"`
+	UserID uint32  `json:"userId"`
 	Score  float32 `json:"score"`
 }
 
 type Progression struct {
 	Base
-	UserID            uint `json:"userId"`
-	QuizID            uint `json:"quizId"`
-	IsFinished        bool `json:"isFinished"`
-	CurrentQuestionID uint `json:"currentQuestionId"`
-	QuestionNumber    int  `json:"questionNumber"`
+	UserID            uint32 `json:"userId"`
+	QuizID            uint32 `json:"quizId"`
+	IsFinished        bool   `json:"isFinished"`
+	CurrentQuestionID uint32 `json:"currentQuestionId"`
+	QuestionNumber    int    `json:"questionNumber"`
 }
 
 type Answer struct {
 	Base
-	UserID   uint `json:"userId"`
-	OptionID uint `json:"optionId"`
-	QuizID   uint `json:"quizId"`
+	UserID   uint32 `json:"userId"`
+	OptionID uint32 `json:"optionId"`
+	QuizID   uint32 `json:"quizId"`
 }
 
 type OptionBase struct {
 	Base
-	QuestionID uint     `json:"questionId"`
+	QuestionID uint32   `json:"questionId"`
 	Value      string   `json:"value"`
 	Answers    []Answer `json:"answers"`
 }
@@ -46,7 +46,7 @@ type Option struct {
 type Question struct {
 	Base
 	Question     string        `json:"question"`
-	QuizID       uint          `json:"quizId"`
+	QuizID       uint32        `json:"quizId"`
 	Options      []Option      `json:"options"`
 	Progressions []Progression `gorm:"foreignKey:CurrentQuestionID" json:"progressions"`
 }

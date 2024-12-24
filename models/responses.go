@@ -1,16 +1,16 @@
 package models
 
 type PaginationResponse struct {
-	Page    uint  `json:"page"`
-	Size    uint  `json:"size"`
-	Content []any `json:"content"`
+	Page    uint32 `json:"page"`
+	Size    uint32 `json:"size"`
+	Content []any  `json:"content"`
 }
 
 type QuestionWithOptionsResponse struct {
 	Base
 	Question string       `json:"question"`
 	Answers  []OptionBase `json:"options"`
-	QuizID   uint         `json:"quizId"`
+	QuizID   uint32       `json:"quizId"`
 }
 
 type BeginQuizResponse struct {
@@ -26,8 +26,8 @@ type FinalizeQuizResponse struct {
 }
 
 type GetUserRankingByScoreResponse struct {
-	Rank    uint    `json:"rank"`
+	Rank    uint32  `json:"rank"`
 	Percent float32 `json:"percent"`
 	Message string  `json:"message"`
-	Score   *Score  `json:"userScore"`
+	Score   Score   `json:"userScore"`
 }
