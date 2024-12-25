@@ -6,7 +6,6 @@ package cmd
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"log"
 	"net/http"
 	"strconv"
@@ -22,7 +21,7 @@ var submitCmd = &cobra.Command{
 	Short: "Finalize a quiz progression qith a calculation of a score.",
 	Long:  `Finalize a quiz progression qith a calculation of a score. Submit takes progressionId argument to finalize a quiz and returns score.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		fmt.Println("submit called")
+		log.Println("submit called")
 
 		progressionId, err := strconv.ParseUint(args[0], 10, 32)
 		if err != nil {
@@ -43,7 +42,12 @@ var submitCmd = &cobra.Command{
 			return err
 		}
 		if resp.StatusCode != 200 {
-			return resp.Request.Context().Err()
+			s, err := util.ReadBodyAndGetString(resp.Body)
+			if err != nil {
+				return err
+			}
+			log.Printf("Status: %d, Error: %s", resp.StatusCode, s)
+			return nil
 		}
 		unmarshalled, err := util.ReadBodyAndUnmarshal(models.FinalizeQuizResponse{}, resp.Body)
 		if err != nil {

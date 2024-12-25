@@ -25,9 +25,18 @@ type FinalizeQuizResponse struct {
 	Score Score `json:"score"`
 }
 
-type GetUserRankingByScoreResponse struct {
-	Rank    uint32  `json:"rank"`
-	Percent float32 `json:"percent"`
-	Message string  `json:"message"`
-	Score   Score   `json:"userScore"`
+type ReadUserRankingByScoreResponse struct {
+	Rank         uint32   `json:"rank"`
+	Percent      float32  `json:"percent"`
+	Message      string   `json:"message"`
+	Score        Score    `json:"userScore"`
+	GivenAnswers []Option `json:"givenAnswers"`
+}
+
+type ReadUserScoreAnalysis struct {
+	User           User     `json:"user"`
+	Quiz           Quiz     `json:"quiz"`
+	Score          Score    `json:"score"`
+	UserAnswers    []Option `json:"userAnswers"`
+	CorrectAnswers []Option `json:"correctAnswers"`
 }

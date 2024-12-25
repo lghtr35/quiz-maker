@@ -44,7 +44,7 @@ definitions:
       progression:
         $ref: '#/definitions/models.Progression'
     type: object
-  models.CreateAnswerRequest:
+  models.CreateOptionRequest:
     properties:
       isCorrect:
         type: boolean
@@ -53,14 +53,13 @@ definitions:
     type: object
   models.CreateQuestionRequest:
     properties:
-      answers:
+      options:
         items:
-          $ref: '#/definitions/models.CreateAnswerRequest'
+          $ref: '#/definitions/models.CreateOptionRequest'
         type: array
       question:
         type: string
     required:
-    - answers
     - question
     type: object
   models.CreateQuizRequest:
@@ -91,17 +90,6 @@ definitions:
   models.FinalizeQuizResponse:
     properties:
       score:
-        $ref: '#/definitions/models.Score'
-    type: object
-  models.GetUserRankingByScoreResponse:
-    properties:
-      message:
-        type: string
-      percent:
-        type: number
-      rank:
-        type: integer
-      userScore:
         $ref: '#/definitions/models.Score'
     type: object
   models.Option:
@@ -216,6 +204,21 @@ definitions:
       updatedAt:
         type: string
     type: object
+  models.ReadUserRankingByScoreResponse:
+    properties:
+      givenAnswers:
+        items:
+          $ref: '#/definitions/models.Option'
+        type: array
+      message:
+        type: string
+      percent:
+        type: number
+      rank:
+        type: integer
+      userScore:
+        $ref: '#/definitions/models.Score'
+    type: object
   models.Score:
     properties:
       createdAt:
@@ -294,8 +297,12 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/models.Quiz'
+        "404":
+          description: Question not found
+          schema:
+            type: string
         "500":
-          description: Internal Server Error
+          description: Internal server error
           schema:
             type: string
       summary: Update an existing quiz
@@ -319,8 +326,12 @@ paths:
           description: Created
           schema:
             $ref: '#/definitions/models.Quiz'
+        "404":
+          description: Question not found
+          schema:
+            type: string
         "500":
-          description: Internal Server Error
+          description: Internal server error
           schema:
             type: string
       summary: Create a new quiz
@@ -343,8 +354,12 @@ paths:
       responses:
         "204":
           description: No Content
+        "404":
+          description: Question not found
+          schema:
+            type: string
         "500":
-          description: Internal Server Error
+          description: Internal server error
           schema:
             type: string
       summary: Delete a quiz
@@ -367,8 +382,12 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/models.Quiz'
+        "404":
+          description: Question not found
+          schema:
+            type: string
         "500":
-          description: Internal Server Error
+          description: Internal server error
           schema:
             type: string
       summary: Get a quiz by ID
@@ -397,8 +416,12 @@ paths:
           description: Bad Request
           schema:
             type: string
+        "404":
+          description: Question not found
+          schema:
+            type: string
         "500":
-          description: Internal Server Error
+          description: Internal server error
           schema:
             type: string
       summary: Answer a quiz question
@@ -424,8 +447,12 @@ paths:
           description: Created
           schema:
             $ref: '#/definitions/models.BeginQuizResponse'
+        "404":
+          description: Question not found
+          schema:
+            type: string
         "500":
-          description: Internal Server Error
+          description: Internal server error
           schema:
             type: string
       summary: Begin a quiz
@@ -449,13 +476,56 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/models.QuestionWithOptionsResponse'
+        "404":
+          description: Question not found
+          schema:
+            type: string
         "500":
-          description: Internal Server Error
+          description: Internal server error
           schema:
             type: string
       summary: Get a quiz question by ID
       tags:
       - Quizzes
+  /quizzes/questions/{id}/options:
+    post:
+      consumes:
+      - application/json
+      description: Creates a new option for a specific question by its ID.
+      parameters:
+      - description: Question ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Option creation payload
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/models.CreateOptionRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created option
+          schema:
+            $ref: '#/definitions/models.OptionBase'
+        "400":
+          description: Bad request
+          schema:
+            type: string
+        "404":
+          description: Question not found
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      summary: Create a question option
+      tags:
+      - Quiz
   /quizzes/submit:
     post:
       consumes:
@@ -476,8 +546,12 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/models.FinalizeQuizResponse'
+        "404":
+          description: Question not found
+          schema:
+            type: string
         "500":
-          description: Internal Server Error
+          description: Internal server error
           schema:
             type: string
       summary: Finalize a quiz
@@ -519,8 +593,12 @@ paths:
             items:
               $ref: '#/definitions/models.User'
             type: array
+        "404":
+          description: Question not found
+          schema:
+            type: string
         "500":
-          description: Internal Server Error
+          description: Internal server error
           schema:
             type: string
       summary: Get a list of users
@@ -544,8 +622,12 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/models.User'
+        "404":
+          description: Question not found
+          schema:
+            type: string
         "500":
-          description: Internal Server Error
+          description: Internal server error
           schema:
             type: string
       summary: Update an existing user
@@ -569,8 +651,12 @@ paths:
           description: Created
           schema:
             $ref: '#/definitions/models.User'
+        "404":
+          description: Question not found
+          schema:
+            type: string
         "500":
-          description: Internal Server Error
+          description: Internal server error
           schema:
             type: string
       summary: Create a new user
@@ -592,8 +678,12 @@ paths:
       responses:
         "204":
           description: No Content
+        "404":
+          description: Question not found
+          schema:
+            type: string
         "500":
-          description: Internal Server Error
+          description: Internal server error
           schema:
             type: string
       summary: Delete a user
@@ -616,8 +706,12 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/models.User'
+        "404":
+          description: Question not found
+          schema:
+            type: string
         "500":
-          description: Internal Server Error
+          description: Internal server error
           schema:
             type: string
       summary: Get a user by ID
@@ -668,7 +762,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/models.GetUserRankingByScoreResponse'
+            $ref: '#/definitions/models.ReadUserRankingByScoreResponse'
         "500":
           description: Internal server error
           schema:

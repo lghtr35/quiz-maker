@@ -29,8 +29,9 @@ func (h *UserHandler) ConfigureSelf(m *http.ServeMux) *http.ServeMux {
 	m.HandleFunc("POST /users", h.createUsers)
 	m.HandleFunc("PATCH /users", h.updateUsers)
 	m.HandleFunc("DELETE /users/{id}", h.deleteUser)
-	m.HandleFunc("GET /users/{userId}/quiz/{quizId}/ranking", h.getUserRankingByScore)
-	m.HandleFunc("GET /users/{userId}/quiz/{quizId}", h.getUserScoreForQuiz)
+	m.HandleFunc("GET /users/{userId}/quiz/{quizId}/analysis", h.readUserScoreAnalysis)
+	m.HandleFunc("GET /users/{userId}/quiz/{quizId}/ranking", h.readUserRankingByScore)
+	m.HandleFunc("GET /users/{userId}/quiz/{quizId}", h.readUserScoreForQuiz)
 
 	return m
 }
@@ -263,7 +264,7 @@ func (h *UserHandler) deleteUser(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(204)
 }
 
-// getUserScoreForQuiz godoc
+// readUserScoreForQuiz godoc
 // @Summary      Get user's score for a specific quiz
 // @Description  Retrieves the user's score for a specific quiz.
 // @Tags         Users
@@ -272,7 +273,7 @@ func (h *UserHandler) deleteUser(w http.ResponseWriter, r *http.Request) {
 // @Success      200     {object}  models.Score
 // @Failure      500     {string}  string  "Internal server error"
 // @Router       /users/{userId}/quiz/{quizId}  [get]
-func (h *UserHandler) getUserScoreForQuiz(w http.ResponseWriter, r *http.Request) {
+func (h *UserHandler) readUserScoreForQuiz(w http.ResponseWriter, r *http.Request) {
 	log.Printf("%s %s => GetUserScoreForQuiz invoked", r.Method, r.URL.Path)
 	userId := r.PathValue("userId")
 	quizId := r.PathValue("quizId")
@@ -298,16 +299,16 @@ func (h *UserHandler) getUserScoreForQuiz(w http.ResponseWriter, r *http.Request
 	w.Write(b)
 }
 
-// getUserRankingByScore godoc
+// readUserRankingByScore godoc
 // @Summary      Get user's ranking by score in a specific quiz
 // @Description  Retrieves the user's ranking, score, and percentage of quizzers they outperformed in a specific quiz.
 // @Tags         Users
 // @Param        userId  path      string  true  "User ID"
 // @Param        quizId  path      string  true  "Quiz ID"
-// @Success      200     {object}  models.GetUserRankingByScoreResponse
+// @Success      200     {object}  models.ReadUserRankingByScoreResponse
 // @Failure      500     {string}  string  "Internal server error"
 // @Router       /users/{userId}/quiz/{quizId}/ranking [get]
-func (h *UserHandler) getUserRankingByScore(w http.ResponseWriter, r *http.Request) {
+func (h *UserHandler) readUserRankingByScore(w http.ResponseWriter, r *http.Request) {
 	log.Printf("%s %s => GetUserRankingByScore invoked", r.Method, r.URL.Path)
 	userIdStr := r.PathValue("userId")
 	quizId := r.PathValue("quizId")
@@ -342,7 +343,7 @@ func (h *UserHandler) getUserRankingByScore(w http.ResponseWriter, r *http.Reque
 		}
 	}
 	percent := (1 - (float32(userPlace) / float32(totalOpponentCount))) * 100
-	response := models.GetUserRankingByScoreResponse{
+	response := models.ReadUserRankingByScoreResponse{
 		Percent: percent,
 		Message: fmt.Sprintf("You were better than %.2f%% of all quizzers", percent),
 		Score:   userScore,
@@ -360,6 +361,92 @@ func (h *UserHandler) getUserRankingByScore(w http.ResponseWriter, r *http.Reque
 		response.Rank = 0
 	}
 
+	b, err := json.Marshal(response)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(200)
+	w.Write(b)
+}
+
+func (h *UserHandler) readUserScoreAnalysis(w http.ResponseWriter, r *http.Request) {
+	log.Printf("%s %s => GetUserRankingByScore invoked", r.Method, r.URL.Path)
+	uId := r.PathValue("userId")
+	qId := r.PathValue("quizId")
+
+	var user models.User
+	res := h.db.Preload("Answers", "quiz_id = ?", qId).First(&user, uId)
+	if res.Error != nil {
+		if res.Error == gorm.ErrRecordNotFound {
+			http.Error(w, res.Error.Error(), http.StatusNotFound)
+			return
+		}
+		http.Error(w, res.Error.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	var quiz models.Quiz
+	res = h.db.Preload("Questions").First(&quiz, qId)
+	if res.Error != nil {
+		if res.Error == gorm.ErrRecordNotFound {
+			http.Error(w, res.Error.Error(), http.StatusNotFound)
+			return
+		}
+		http.Error(w, res.Error.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	optIds := make([]uint, len(user.Answers))
+	for i, a := range user.Answers {
+		optIds[i] = uint(a.OptionID)
+	}
+
+	var userOptions []models.Option
+	res = h.db.Find(&userOptions, optIds)
+	if res.Error != nil {
+		if res.Error == gorm.ErrRecordNotFound {
+			http.Error(w, res.Error.Error(), http.StatusNotFound)
+			return
+		}
+		http.Error(w, res.Error.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	correctOptions := make([]models.Option, 0)
+	for _, question := range quiz.Questions {
+		var optionsFound []models.Option
+		res = h.db.Where("is_correct = ? AND question_id = ?", true, question.ID).Find(&optionsFound)
+		if res.Error != nil {
+			if res.Error == gorm.ErrRecordNotFound {
+				http.Error(w, res.Error.Error(), http.StatusNotFound)
+				return
+			}
+			http.Error(w, res.Error.Error(), http.StatusInternalServerError)
+			return
+		}
+		correctOptions = append(correctOptions, optionsFound...)
+	}
+
+	var score models.Score
+	res = h.db.Where("user_id = ? AND quiz_id = ?", uId, qId).First(&score)
+	if res.Error != nil {
+		if res.Error == gorm.ErrRecordNotFound {
+			http.Error(w, res.Error.Error(), http.StatusNotFound)
+			return
+		}
+		http.Error(w, res.Error.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	response := models.ReadUserScoreAnalysis{
+		User:           user,
+		Quiz:           quiz,
+		Score:          score,
+		UserAnswers:    userOptions,
+		CorrectAnswers: correctOptions,
+	}
 	b, err := json.Marshal(response)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)

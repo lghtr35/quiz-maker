@@ -28,7 +28,7 @@ var createUserCmd = &cobra.Command{
 	Short: "Create User with name",
 	Args:  cobra.MinimumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		fmt.Println("create called")
+		log.Println("create user called")
 		req := models.CreateUserRequest{
 			Name: args[0],
 		}
@@ -42,7 +42,12 @@ var createUserCmd = &cobra.Command{
 			return err
 		}
 		if resp.StatusCode != 201 {
-			return resp.Request.Context().Err()
+			s, err := util.ReadBodyAndGetString(resp.Body)
+			if err != nil {
+				return err
+			}
+			log.Printf("Status: %d, Error: %s", resp.StatusCode, s)
+			return nil
 		}
 		user, err := util.ReadBodyAndUnmarshal(models.User{}, resp.Body)
 		if err != nil {
@@ -58,6 +63,8 @@ var createQuizCmd = &cobra.Command{
 	Short: "Create a quiz with given parameters. Options argument is not mandatory.",
 	Args:  cobra.MinimumNArgs(2),
 	RunE: func(cmd *cobra.Command, args []string) error {
+		log.Println("create quiz called")
+
 		name := args[0]
 		qStr := args[1]
 		questions := strings.Split(qStr, ",")
@@ -93,7 +100,12 @@ var createQuizCmd = &cobra.Command{
 			return err
 		}
 		if resp.StatusCode != 201 {
-			return resp.Request.Context().Err()
+			s, err := util.ReadBodyAndGetString(resp.Body)
+			if err != nil {
+				return err
+			}
+			log.Printf("Status: %d, Error: %s", resp.StatusCode, s)
+			return nil
 		}
 		quiz, err := util.ReadBodyAndUnmarshal(models.Quiz{}, resp.Body)
 		if err != nil {
@@ -132,7 +144,12 @@ var createOptionCmd = &cobra.Command{
 			return err
 		}
 		if resp.StatusCode != 201 {
-			return resp.Request.Context().Err()
+			s, err := util.ReadBodyAndGetString(resp.Body)
+			if err != nil {
+				return err
+			}
+			log.Printf("Status: %d, Error: %s", resp.StatusCode, s)
+			return nil
 		}
 		option, err := util.ReadBodyAndUnmarshal(models.OptionBase{}, resp.Body)
 		if err != nil {

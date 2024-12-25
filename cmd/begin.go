@@ -6,7 +6,6 @@ package cmd
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"log"
 	"net/http"
 	"strconv"
@@ -23,7 +22,7 @@ var beginCmd = &cobra.Command{
 	Long:  `Begin a quiz using QuizId as an user with UserId. It will return a Progression object for that user and quiz specifically`,
 	Args:  cobra.MinimumNArgs(2),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		fmt.Println("begin called")
+		log.Println("begin called")
 
 		userId, err := strconv.ParseUint(args[0], 10, 32)
 		if err != nil {
@@ -49,7 +48,12 @@ var beginCmd = &cobra.Command{
 			return err
 		}
 		if resp.StatusCode != 201 {
-			return resp.Request.Context().Err()
+			s, err := util.ReadBodyAndGetString(resp.Body)
+			if err != nil {
+				return err
+			}
+			log.Printf("Status: %d, Error: %s", resp.StatusCode, s)
+			return nil
 		}
 		unmarshalled, err := util.ReadBodyAndUnmarshal(models.BeginQuizResponse{}, resp.Body)
 		if err != nil {

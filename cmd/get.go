@@ -25,6 +25,8 @@ var getQuizCmd = &cobra.Command{
 	Short: "Get quiz by id",
 	Args:  cobra.MinimumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
+		log.Println("get quiz called")
+
 		if _, err := strconv.ParseUint(args[0], 10, 32); err != nil {
 			return err
 		}
@@ -35,14 +37,14 @@ var getQuizCmd = &cobra.Command{
 		}
 
 		if resp.StatusCode != 200 {
-			return resp.Request.Context().Err()
+			s, err := util.ReadBodyAndGetString(resp.Body)
+			if err != nil {
+				return err
+			}
+			log.Printf("Status: %d, Error: %s", resp.StatusCode, s)
+			return nil
 		}
-		unmarshalled, err := util.ReadBodyAndUnmarshal(models.Quiz{}, resp.Body)
-		if err != nil {
-			return err
-		}
-		log.Printf("Quiz: %+v", unmarshalled)
-		return nil
+		return util.ReadBodyAndPrintJSON[models.Quiz](resp.Body)
 	},
 }
 
@@ -51,6 +53,8 @@ var getQuestionCmd = &cobra.Command{
 	Short: "Get question by id",
 	Args:  cobra.MinimumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
+		log.Println("get question called")
+
 		if _, err := strconv.ParseUint(args[0], 10, 32); err != nil {
 			return err
 		}
@@ -61,14 +65,14 @@ var getQuestionCmd = &cobra.Command{
 		}
 
 		if resp.StatusCode != 200 {
-			return resp.Request.Context().Err()
+			s, err := util.ReadBodyAndGetString(resp.Body)
+			if err != nil {
+				return err
+			}
+			log.Printf("Status: %d, Error: %s", resp.StatusCode, s)
+			return nil
 		}
-		unmarshalled, err := util.ReadBodyAndUnmarshal(models.Question{}, resp.Body)
-		if err != nil {
-			return err
-		}
-		log.Printf("Question: %+v", unmarshalled)
-		return nil
+		return util.ReadBodyAndPrintJSON[models.Question](resp.Body)
 	},
 }
 
@@ -77,6 +81,8 @@ var getScore = &cobra.Command{
 	Short: "Get score by UserId and QuizId",
 	Args:  cobra.MinimumNArgs(2),
 	RunE: func(cmd *cobra.Command, args []string) error {
+		log.Println("get score called")
+
 		if _, err := strconv.ParseUint(args[0], 10, 32); err != nil {
 			return err
 		}
@@ -90,14 +96,14 @@ var getScore = &cobra.Command{
 		}
 
 		if resp.StatusCode != 200 {
-			return resp.Request.Context().Err()
+			s, err := util.ReadBodyAndGetString(resp.Body)
+			if err != nil {
+				return err
+			}
+			log.Printf("Status: %d, Error: %s", resp.StatusCode, s)
+			return nil
 		}
-		unmarshalled, err := util.ReadBodyAndUnmarshal(models.Score{}, resp.Body)
-		if err != nil {
-			return err
-		}
-		log.Printf("Score: %+v", unmarshalled)
-		return nil
+		return util.ReadBodyAndPrintJSON[models.Score](resp.Body)
 	},
 }
 
@@ -106,6 +112,8 @@ var getRanking = &cobra.Command{
 	Short: "Get ranking by UserId and QuizId",
 	Args:  cobra.MinimumNArgs(2),
 	RunE: func(cmd *cobra.Command, args []string) error {
+		log.Println("get ranking called")
+
 		if _, err := strconv.ParseUint(args[0], 10, 32); err != nil {
 			return err
 		}
@@ -119,14 +127,45 @@ var getRanking = &cobra.Command{
 		}
 
 		if resp.StatusCode != 200 {
-			return resp.Request.Context().Err()
+			s, err := util.ReadBodyAndGetString(resp.Body)
+			if err != nil {
+				return err
+			}
+			log.Printf("Status: %d, Error: %s", resp.StatusCode, s)
+			return nil
 		}
-		unmarshalled, err := util.ReadBodyAndUnmarshal(models.GetUserRankingByScoreResponse{}, resp.Body)
+		return util.ReadBodyAndPrintJSON[models.ReadUserRankingByScoreResponse](resp.Body)
+	},
+}
+
+var getScoreAnalysis = &cobra.Command{
+	Use:   "analysis [UserId] [QuizId]",
+	Short: "Get score analysis by UserId and QuizId",
+	Args:  cobra.MinimumNArgs(2),
+	RunE: func(cmd *cobra.Command, args []string) error {
+		log.Println("get analysis called")
+
+		if _, err := strconv.ParseUint(args[0], 10, 32); err != nil {
+			return err
+		}
+		if _, err := strconv.ParseUint(args[1], 10, 32); err != nil {
+			return err
+		}
+
+		resp, err := http.Get(fmt.Sprintf("http://localhost:8080/users/%s/quiz/%s/analysis", args[0], args[1]))
 		if err != nil {
 			return err
 		}
-		log.Printf("Ranking: %+v", unmarshalled)
-		return nil
+
+		if resp.StatusCode != 200 {
+			s, err := util.ReadBodyAndGetString(resp.Body)
+			if err != nil {
+				return err
+			}
+			log.Printf("Status: %d, Error: %s", resp.StatusCode, s)
+			return nil
+		}
+		return util.ReadBodyAndPrintJSON[models.ReadUserScoreAnalysis](resp.Body)
 	},
 }
 
@@ -136,6 +175,7 @@ func init() {
 	getCmd.AddCommand(getQuestionCmd)
 	getCmd.AddCommand(getScore)
 	getCmd.AddCommand(getRanking)
+	getCmd.AddCommand(getScoreAnalysis)
 	// Here you will define your flags and configuration settings.
 
 	// Cobra supports Persistent Flags which will work for this command

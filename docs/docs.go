@@ -51,8 +51,14 @@ const docTemplate = `{
                             "$ref": "#/definitions/models.Quiz"
                         }
                     },
+                    "404": {
+                        "description": "Question not found",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Internal server error",
                         "schema": {
                             "type": "string"
                         }
@@ -89,8 +95,14 @@ const docTemplate = `{
                             "$ref": "#/definitions/models.Quiz"
                         }
                     },
+                    "404": {
+                        "description": "Question not found",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Internal server error",
                         "schema": {
                             "type": "string"
                         }
@@ -135,8 +147,14 @@ const docTemplate = `{
                             "type": "string"
                         }
                     },
+                    "404": {
+                        "description": "Question not found",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Internal server error",
                         "schema": {
                             "type": "string"
                         }
@@ -175,8 +193,14 @@ const docTemplate = `{
                             "$ref": "#/definitions/models.BeginQuizResponse"
                         }
                     },
+                    "404": {
+                        "description": "Question not found",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Internal server error",
                         "schema": {
                             "type": "string"
                         }
@@ -213,8 +237,73 @@ const docTemplate = `{
                             "$ref": "#/definitions/models.QuestionWithOptionsResponse"
                         }
                     },
+                    "404": {
+                        "description": "Question not found",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/quizzes/questions/{id}/options": {
+            "post": {
+                "description": "Creates a new option for a specific question by its ID.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Quiz"
+                ],
+                "summary": "Create a question option",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Question ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Option creation payload",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.CreateOptionRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created option",
+                        "schema": {
+                            "$ref": "#/definitions/models.OptionBase"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "404": {
+                        "description": "Question not found",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
                         "schema": {
                             "type": "string"
                         }
@@ -253,8 +342,14 @@ const docTemplate = `{
                             "$ref": "#/definitions/models.FinalizeQuizResponse"
                         }
                     },
+                    "404": {
+                        "description": "Question not found",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Internal server error",
                         "schema": {
                             "type": "string"
                         }
@@ -291,8 +386,14 @@ const docTemplate = `{
                             "$ref": "#/definitions/models.Quiz"
                         }
                     },
+                    "404": {
+                        "description": "Question not found",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Internal server error",
                         "schema": {
                             "type": "string"
                         }
@@ -324,8 +425,14 @@ const docTemplate = `{
                     "204": {
                         "description": "No Content"
                     },
+                    "404": {
+                        "description": "Question not found",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Internal server error",
                         "schema": {
                             "type": "string"
                         }
@@ -388,8 +495,14 @@ const docTemplate = `{
                             }
                         }
                     },
+                    "404": {
+                        "description": "Question not found",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Internal server error",
                         "schema": {
                             "type": "string"
                         }
@@ -426,8 +539,14 @@ const docTemplate = `{
                             "$ref": "#/definitions/models.User"
                         }
                     },
+                    "404": {
+                        "description": "Question not found",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Internal server error",
                         "schema": {
                             "type": "string"
                         }
@@ -464,8 +583,14 @@ const docTemplate = `{
                             "$ref": "#/definitions/models.User"
                         }
                     },
+                    "404": {
+                        "description": "Question not found",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Internal server error",
                         "schema": {
                             "type": "string"
                         }
@@ -502,8 +627,14 @@ const docTemplate = `{
                             "$ref": "#/definitions/models.User"
                         }
                     },
+                    "404": {
+                        "description": "Question not found",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Internal server error",
                         "schema": {
                             "type": "string"
                         }
@@ -535,8 +666,14 @@ const docTemplate = `{
                     "204": {
                         "description": "No Content"
                     },
+                    "404": {
+                        "description": "Question not found",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Internal server error",
                         "schema": {
                             "type": "string"
                         }
@@ -610,7 +747,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/models.GetUserRankingByScoreResponse"
+                            "$ref": "#/definitions/models.ReadUserRankingByScoreResponse"
                         }
                     },
                     "500": {
@@ -693,7 +830,7 @@ const docTemplate = `{
                 }
             }
         },
-        "models.CreateAnswerRequest": {
+        "models.CreateOptionRequest": {
             "type": "object",
             "properties": {
                 "isCorrect": {
@@ -707,14 +844,13 @@ const docTemplate = `{
         "models.CreateQuestionRequest": {
             "type": "object",
             "required": [
-                "answers",
                 "question"
             ],
             "properties": {
-                "answers": {
+                "options": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/models.CreateAnswerRequest"
+                        "$ref": "#/definitions/models.CreateOptionRequest"
                     }
                 },
                 "question": {
@@ -765,23 +901,6 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "score": {
-                    "$ref": "#/definitions/models.Score"
-                }
-            }
-        },
-        "models.GetUserRankingByScoreResponse": {
-            "type": "object",
-            "properties": {
-                "message": {
-                    "type": "string"
-                },
-                "percent": {
-                    "type": "number"
-                },
-                "rank": {
-                    "type": "integer"
-                },
-                "userScore": {
                     "$ref": "#/definitions/models.Score"
                 }
             }
@@ -954,6 +1073,29 @@ const docTemplate = `{
                 },
                 "updatedAt": {
                     "type": "string"
+                }
+            }
+        },
+        "models.ReadUserRankingByScoreResponse": {
+            "type": "object",
+            "properties": {
+                "givenAnswers": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.Option"
+                    }
+                },
+                "message": {
+                    "type": "string"
+                },
+                "percent": {
+                    "type": "number"
+                },
+                "rank": {
+                    "type": "integer"
+                },
+                "userScore": {
+                    "$ref": "#/definitions/models.Score"
                 }
             }
         },

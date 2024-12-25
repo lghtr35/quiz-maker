@@ -6,7 +6,6 @@ package cmd
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"log"
 	"net/http"
 	"strconv"
@@ -23,7 +22,7 @@ var answerCmd = &cobra.Command{
 	Long:  `Answer a question to progress in quiz. It takes an optionId and progressionId to save an answer to the current question in quiz.`,
 	Args:  cobra.MinimumNArgs(2),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		fmt.Println("answer called")
+		log.Println("answer called")
 
 		progressionId, err := strconv.ParseUint(args[0], 10, 32)
 		if err != nil {
@@ -49,7 +48,12 @@ var answerCmd = &cobra.Command{
 			return err
 		}
 		if resp.StatusCode != 200 {
-			return resp.Request.Context().Err()
+			s, err := util.ReadBodyAndGetString(resp.Body)
+			if err != nil {
+				return err
+			}
+			log.Printf("Status: %d, Error: %s", resp.StatusCode, s)
+			return nil
 		}
 		unmarshalled, err := util.ReadBodyAndUnmarshal(models.AnswerQuizQuestionResponse{}, resp.Body)
 		if err != nil {
